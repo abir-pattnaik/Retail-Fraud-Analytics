@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[2]:
 
 
 import pandas as pd
@@ -30,20 +30,20 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 
 
-# In[2]:
+# In[3]:
 
 
 os.getcwd()
 
 
-# In[3]:
+# In[4]:
 
 
 #Change directory to where dataset is
 os.chdir("X:\\Datasets")
 
 
-# In[4]:
+# In[5]:
 
 
 transaction_data=pd.read_excel('Fraud_Analytics_Dataset.xlsx',0)
@@ -51,7 +51,7 @@ customer_data=pd.read_excel('Fraud_Analytics_Dataset.xlsx',1)
 sales_data=pd.read_excel('Fraud_Analytics_Dataset.xlsx',2)
 
 
-# In[5]:
+# In[6]:
 
 
 display(transaction_data.head())
@@ -59,7 +59,7 @@ display(customer_data.head())
 display(sales_data.head())
 
 
-# In[6]:
+# In[7]:
 
 
 '''
@@ -70,7 +70,7 @@ f1=sales_data.join(transaction_data.set_index('Transaction_Id'),on='Transaction_
 original_data = f1.join(customer_data.set_index('CUSTOMER_ID'),on='Customer_Id')
 
 
-# In[298]:
+# In[8]:
 
 
 #Preprocessing - > Wrangling + Cleaning
@@ -78,24 +78,18 @@ original_data = f1.join(customer_data.set_index('CUSTOMER_ID'),on='Customer_Id')
 # Correcting column names for ease of usage
 original_data.columns = original_data.columns.str.replace(' ','')
 original_data.columns = original_data.columns.str.replace('.','')
-
-#Making object type data into categorical variables for now 
-# for col_name in master_data.columns:
-#     if(master_data[col_name].dtype == 'object'):
-#         master_data[col_name]= master_data[col_name].astype('category')
-#         #master_data[col_name] = transaction_data[col_name].cat.codes
         
 original_data.head(10)
 
 
-# In[274]:
+# In[9]:
 
 
 #Please don't touch this piece of code, otherwise the destruction caused would be equivalent to World War 3
 master_data = original_data
 
 
-# In[275]:
+# In[10]:
 
 
 master_data.info()
@@ -116,25 +110,10 @@ master_data.info()
 # 
 # ---
 
-# In[277]:
+# In[11]:
 
 
-# feature_list = ['No_Of_Items','Shipment_Flg','Return_Flag','FirstTimeCustomers',
-#                 'UnusualLocation','BiggerthanAverageOrders','MultipleShippingAddresses','ShippingandBillingAddressarenotthesame',
-#                 'SeveralCardsusedfromtheSameIpAddress','PaymentInformationtypedwithCapitalletters', 'FastShipping',
-#                 'ManyTransactionsinashorttimeperiod','MEMBERSHIP_TYPE__ID','CUSTOMER_STATUS_ID','customer_type_id','AGE',
-#                 'INCOME_RANGE', 'PROFESSION', 'Preferred_Comm_Sub_Channel','credit_risk_rating', 'Residence_Province', 
-#                 'Mode_Of_Payment','Sale_Dt']
-
-# feature_list = ['Shipment_Flg','Return_Flag','FirstTimeCustomers', 'UnusualLocation','BiggerthanAverageOrders',
-#                 'MultipleShippingAddresses','ShippingandBillingAddressarenotthesame',
-#                 'SeveralCardsusedfromtheSameIpAddress', 'FastShipping',
-#                 'ManyTransactionsinashorttimeperiod','MEMBERSHIP_TYPE__ID',
-#                 'INCOME_RANGE', 'PROFESSION','credit_risk_rating', 'Lastmodified_Dt']
-
-# feature_list = ['UnusualLocation','BiggerthanAverageOrders','MultipleShippingAddresses','ShippingandBillingAddressarenotthesame',
-#                 'SeveralCardsusedfromtheSameIpAddress', 'FastShipping',
-#                 'ManyTransactionsinashorttimeperiod']
+# Initial features list for feature selection at model building stages
 feature_list = ['FastShipping','credit_risk_score','age_range','Interest_2','INFLUENCE',
  'Interests_1', 'INCOME_RANGE',
  'LOYALITY_FLG', 'NO_TIMES_DELINQUENT_in_365_days',
@@ -160,81 +139,77 @@ feature_list = ['FastShipping','credit_risk_score','age_range','Interest_2','INF
 target = 'Fraud'
 
 
-# In[278]:
+# In[12]:
 
 
+# Segregating Target Data and Feature Set
 target = 'Fraud'
-label_data = master_data[target].astype('category').cat.codes
+label_data = master_data[target].astype('category').cat.codes  # Converting Fraud to binary categorical variables [0,1]
 master_data.drop('Fraud', axis = 1)
-#feature_list = master_data.columns
-print(label_data.head(5))
 
 master_data = master_data[feature_list]
 master_data.info()
 
 
-# In[279]:
+# In[13]:
 
 
+# Finding columns with datatypes which classifiers will not recognise such as object and datetime
 obj_type_variables = [column for column in master_data.columns if master_data[column].dtype in ['object', 'datetime64[ns]']]
 print(obj_type_variables)
 
 
-# In[280]:
+# In[14]:
 
 
-#Making object type data into categorical variables for now
+# Making object type data into categorical variables, for creating categorical codes
 for column in obj_type_variables:
     master_data[column] = master_data[column].astype('category')
 
 
-# In[281]:
+# In[15]:
 
 
 master_data.info()
 
 
-# In[282]:
+# In[16]:
 
 
-#Converting categorical into numerical values
+# Converting categorical into corresponding numerical values
 master_data[obj_type_variables] = master_data[obj_type_variables].apply(lambda column: column.cat.codes)
 
 
-# In[283]:
+# In[17]:
 
 
 master_data.info()
 
 
-# In[284]:
+# In[230]:
 
 
 #list of columns with null values 
 list_of_clm_null_value= master_data.columns[master_data.isna().any()].tolist()
 print(list_of_clm_null_value)
 
-
-# In[297]:
-
-
 null_columns=master_data.columns[master_data.isnull().any()]
 count = master_data[null_columns].isnull().sum()
 print(count)
 
 
-# In[285]:
+# In[20]:
 
 
-#replacing the nan value with -1 after EDA
+# replacing the NaN value with -1 after EDA
 for i in list_of_clm_null_value:
     master_data[i].fillna(-1, inplace = True) 
 
 
-# In[286]:
+# In[21]:
 
 
-#Converting numerical based categories into category dtype
+# Converting numerical based categories into category dtype
 for column in obj_type_variables:
     master_data[column] = master_data[column].astype('category')
 master_data.info()
@@ -243,21 +218,34 @@ master_data.info()
 # ---
 # Model Building
 # ---
+# 
+# We will be testing various models for this Binary Classification problem.
+# 
+# Our approach would be to first create baseline untuned models on a pre-decided ratio of training and testing datasets, and after that, through various iterations, arrive at the tuned model which gives a balanced result, with a >=85% accuracy.
+# 
+# Along with accuracy, our metrics for evaluation of the model would be Precision, Recall and Confusion matrix.
+# 
 # ---
 
-# In[287]:
+# In[221]:
 
 
 #Stratified Shuffle Split by 70:30 ratio + SelectKBest
 retail_data = master_data
 skb = SelectKBest(k=8)
 retail_data = skb.fit_transform(retail_data, label_data)
-features_train, features_test, labels_train, labels_test = train_test_split(retail_data, label_data, test_size=0.3, random_state=42)
+#features_train, features_test, labels_train, labels_test = train_test_split(retail_data, label_data, test_size=0.3, random_state=42)
+
+splitter = StratifiedShuffleSplit(n_splits=10, test_size=0.3, random_state=42)
+for train_index, test_index in splitter.split(retail_data, label_data):
+        features_train, features_test = retail_data[train_index], retail_data[test_index]
+        labels_train, labels_test = label_data[train_index], label_data[test_index]
 
 
-# In[288]:
+# In[222]:
 
 
+# Getting feature scores from SelectKBest after fitting
 unsorted_list = zip(feature_list, skb.scores_)
 
 sorted_features = sorted(unsorted_list, key=lambda x: x[1], reverse=True)
@@ -266,15 +254,10 @@ print("Feature Scores:\n")
 pprint(sorted_features)
 
 
-# In[289]:
+# In[224]:
 
 
-print(len(labels_test[labels_test==1]))
-
-
-# In[290]:
-
-
+# Trying untuned, baseline models on 70:30 train-test dataset
 gnb = GaussianNB()
 y_pred_gnb = gnb.fit(features_train, labels_train).predict(features_test)
 
@@ -288,28 +271,20 @@ logr = LogisticRegression()
 y_pred_logr = logr.fit(features_train, labels_train).predict(features_test)
 
 
-# In[291]:
+# In[225]:
 
 
+# Accuracy Metrics
 print("GNB:", accuracy_score(labels_test, y_pred_gnb))
 print("DT:", accuracy_score(labels_test, y_pred_DT))
 print("ADA:", accuracy_score(labels_test, y_pred_ada))
 print("Logr:", accuracy_score(labels_test, y_pred_logr))
 
 
-
-# #print precision_recall_fscore_support(predicted_variable, y_pred, average='macro')
-# print(precision_recall_fscore_support(predicted_variable, y_pred, average='micro'))
-# print(precision_recall_fscore_
-#support(predicted_variable, y_pred, average=None))
-# #print precision_recall_fscore_support(predicted_variable, y_pred, average='weighted')
-
-# print(math.sqrt(mean_squared_error(predicted_variable, y_pred)))
+# In[231]:
 
 
-# In[292]:
-
-
+# Precision, Recall, and actual prediction numbers
 print("GNB:", classification_report(labels_test, y_pred_gnb))
 print("DT:", classification_report(labels_test, y_pred_DT))
 print("ADA:", classification_report(labels_test, y_pred_ada))
@@ -317,11 +292,15 @@ print("Logr:", classification_report(labels_test, y_pred_logr))
 
 
 # ---
-# **Tuning the classifiers**
+# ### Tuning the classifiers
+# 
+# We will be using a pipeline, with a MinMax Scaler at stage 1 for int/float values, and the classifier at stage 2. This pipeline will be fed to GridSearchCV along with the classifier instance, as well as parameter list for that particular classifier.
+# 
+# Through previously mentioned metrics, we will be determining the best tuned classifier here.
 # 
 # ---
 
-# In[293]:
+# In[227]:
 
 
 def tune_NB() :
@@ -385,7 +364,7 @@ def tune_RandomF():
     return clf, param_grid
 
 
-# In[294]:
+# In[228]:
 
 
 # Create pipeline
@@ -405,7 +384,7 @@ print('\n=> Chosen parameters :')
 print(grid.best_params_)
 
 
-# In[295]:
+# In[229]:
 
 
 # Metrics
@@ -416,8 +395,6 @@ tn, fp, fn, tp = confusion_matrix(labels_test, predictions).ravel()
 print("Confusion Matrix:\n", tn, fp, fn, tp)
 
 
-# In[ ]:
-
-
-
-
+# ***Hence, after multiple iterations, we are achieving a respectable accuracy of 85.61% using a tuned Decision Tree Classifier. The dataset is split in 70-30 ration, with top 8 features being used for classification from SelectKBest.***
+# 
+# ***We are receiving an average Precision Score of 0.81, and recall score of 0.86.***
